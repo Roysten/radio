@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 
+use actix_web::http::uri::{Scheme, Uri};
 use actix_web::{web, HttpResponse, Responder, Result};
-use actix_web::http::uri::{Uri, Scheme};
 
 use serde::{Deserialize, Serialize};
 
@@ -17,10 +17,6 @@ pub struct StreamInfo {
     pub url: String,
 }
 
-pub fn index(data: web::Data<AppState>) -> impl Responder {
-    HttpResponse::Ok().body(data.player.lock().unwrap().cfg_path.clone())
-}
-
 pub fn get_playlist(data: web::Data<AppState>) -> Result<HttpResponse> {
     let guard = data.player.lock().unwrap();
     Ok(HttpResponse::Ok().json2(&guard.get_playlist()))
@@ -30,13 +26,14 @@ pub fn post_stream(info: web::Json<StreamInfo>, data: web::Data<AppState>) -> Re
     let new_stream = info.into_inner();
 
     match new_stream.url.parse::<Uri>() {
-        Ok(ref uri) if uri.scheme_part() == Some(&Scheme::HTTP) || uri.scheme_part() == Some(&Scheme::HTTPS) => {
+        Ok(ref uri)
+            if uri.scheme_part() == Some(&Scheme::HTTP)
+                || uri.scheme_part() == Some(&Scheme::HTTPS) =>
+        {
             let mut guard = data.player.lock().unwrap();
             Ok(HttpResponse::Ok().json2(guard.add(new_stream.name, new_stream.url)))
-        },
-        _ => {
-            Ok(HttpResponse::BadRequest().body("URL invalid or unsupported"))
-        },
+        }
+        _ => Ok(HttpResponse::BadRequest().body("URL invalid or unsupported")),
     }
 }
 
@@ -64,4 +61,3 @@ pub fn delete_stream(info: web::Path<usize>, data: web::Data<AppState>) -> Resul
         None => Ok(HttpResponse::NotFound().body("No stream with the provided ID")),
     }
 }
-

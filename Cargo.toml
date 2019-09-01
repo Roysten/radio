@@ -3,11 +3,14 @@ name = "radio"
 version = "0.1.0"
 authors = ["Roy van der Vegt <Royvandervegt@gmail.com>"]
 edition = "2018"
+build = "build.rs"
+links = "mpv"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 actix-web = "1.0.5"
-mpv = "0.2.3"
+actix-files = "0.1.4"
+libc = "0.2"
 serde = { version = "1.0.97", features = ["derive"] }
 serde_json = "1.0.40"

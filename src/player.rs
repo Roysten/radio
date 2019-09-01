@@ -1,7 +1,7 @@
 use std::cmp;
 use std::fs;
 
-use mpv::MpvHandler;
+use crate::mpv_simple::{MpvCtx, MpvFormat};
 
 use serde::{Deserialize, Serialize};
 
@@ -27,30 +27,33 @@ pub struct Player {
     pub cfg: PlayerCfg,
 
     #[serde(skip)]
-    mpv_ctx: Option<MpvHandler>,
+    mpv_ctx: Option<MpvCtx>,
 }
 
-unsafe impl Send for Player { }
-unsafe impl Sync for Player { }
+unsafe impl Send for Player {}
+unsafe impl Sync for Player {}
 
 impl Stream {
-
     pub fn new(id: usize, name: String, url: String) -> Self {
         Stream { id, name, url }
     }
-
 }
 
 impl Player {
-    pub fn from_file(path: &std::path::Path, mut mpv_ctx: MpvHandler) -> Self {
-        let _ = mpv_ctx.observe_property::<&str>("metadata", 0);
+    pub fn from_file(path: &std::path::Path, mut mpv_ctx: MpvCtx) -> Self {
+       mpv_ctx.observe_property(0, "metadata", MpvFormat::String).expect("Failed to observe metadata property");
         match fs::read_to_string(path) {
             Ok(txt) => {
-                let mut player = serde_json::from_str::<Player>(&txt).expect("Failed to parse configuration file");
+                let mut player = serde_json::from_str::<Player>(&txt)
+                    .expect("Failed to parse configuration file");
                 player.mpv_ctx = Some(mpv_ctx);
-                player.cfg.last_id = player.cfg.streams.iter().fold(0, |acc, stream| cmp::max(acc, stream.id));
+                player.cfg.last_id = player
+                    .cfg
+                    .streams
+                    .iter()
+                    .fold(0, |acc, stream| cmp::max(acc, stream.id));
                 player
-            },
+            }
             Err(_) => Player {
                 cfg_path: path.to_str().unwrap().to_string(),
                 cfg: PlayerCfg {
@@ -67,9 +70,11 @@ impl Player {
         &self.cfg.streams
     }
 
-    pub fn add(&mut self, name :String, url: String) -> &Stream {
+    pub fn add(&mut self, name: String, url: String) -> &Stream {
         self.cfg.last_id += 1;
-        self.cfg.streams.push(Stream::new(self.cfg.last_id, name, url));
+        self.cfg
+            .streams
+            .push(Stream::new(self.cfg.last_id, name, url));
         self.cfg.streams.last().unwrap()
     }
 
@@ -77,7 +82,11 @@ impl Player {
         if !self.cfg.streams.is_empty() {
             self.cfg.current = (self.cfg.current + 1) % self.cfg.streams.len();
             let next_url = self.get_current().unwrap().url.to_string();
-            self.mpv_ctx.as_mut().unwrap().command(&["loadfile", &next_url]).expect("Error opening URL");
+            self.mpv_ctx
+                .as_mut()
+                .unwrap()
+                .command(&["loadfile", &next_url])
+                .expect("Error opening URL");
         }
     }
 
@@ -89,7 +98,11 @@ impl Player {
                 self.cfg.current = (self.cfg.current - 1) % self.cfg.streams.len();
             }
             let prev_url = self.get_current().unwrap().url.to_string();
-            self.mpv_ctx.as_mut().unwrap().command(&["loadfile", &prev_url]).expect("Error opening URL");
+            self.mpv_ctx
+                .as_mut()
+                .unwrap()
+                .command(&["loadfile", &prev_url])
+                .expect("Error opening URL");
         }
     }
 
@@ -99,11 +112,8 @@ impl Player {
 
     pub fn delete(&mut self, id: usize) -> Option<Stream> {
         match self.cfg.streams.iter().position(|stream| stream.id == id) {
-            Some(pos) => {
-                Some(self.cfg.streams.remove(pos))
-            },
+            Some(pos) => Some(self.cfg.streams.remove(pos)),
             None => None,
         }
     }
 }
-

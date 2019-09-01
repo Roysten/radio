@@ -1,4 +1,5 @@
 mod http;
+mod mpv_simple;
 mod player;
 
 use std::path::Path;
@@ -30,23 +31,25 @@ struct MetadataUpdate<'a> {
 fn main() {
     let cfg_path = Path::new("my_cfg.json");
 
-    let mut mpv_builder = mpv::MpvHandlerBuilder::new().expect("Failed to init MPV builder");
-    let mut mpv = mpv_builder.build().expect("Failed to build MPV handler");
+    let mut mpv_ctx = mpv_simple::MpvCtx::create().expect("Failed to create MPV context");
+    mpv_ctx.init().expect("Failed to initialize MPV context");
 
-    let player = Arc::new(Mutex::new(player::Player::from_file(cfg_path, mpv)));
+    let player = Arc::new(Mutex::new(player::Player::from_file(cfg_path, mpv_ctx)));
     HttpServer::new(move || {
         App::new()
-            .data(http::AppState{player: player.clone()})
-            .route("/", web::get().to(http::index))
+            .data(http::AppState {
+                player: player.clone(),
+            })
             .route("/playlist", web::get().to(http::get_playlist))
             .route("/stream", web::post().to(http::post_stream))
             .route("/stream", web::get().to(http::get_stream))
             .route("/stream/{id}", web::delete().to(http::delete_stream))
             .route("/next", web::put().to(http::put_next))
             .route("/prev", web::put().to(http::put_prev))
+            .service(actix_files::Files::new("/", "/home/roysten/web").index_file("index.html"))
     })
     .workers(1)
-    .bind("127.0.0.1:8080")
+    .bind("0.0.0.0:8080")
     .unwrap()
     .run()
     .unwrap();

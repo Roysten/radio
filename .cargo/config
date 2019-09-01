@@ -1,0 +1,11 @@
+[target.armv7-unknown-linux-musleabihf]
+linker = "armv7-linux-musleabihf-gcc"
+rustflags = [
+	# Static linking is enabled by default for musl targets.
+	# Disable static linking so we can use libmpv.so
+	"-C", "prefer-dynamic",
+	"-C", "target-feature=+vfp4",
+	"-C", "target-feature=-crt-static",
+	"-C", "link-arg=-Wl,-rpath-link,/mnt/data/libmpv_musl",
+]
+
