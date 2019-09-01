@@ -41,7 +41,9 @@ impl Stream {
 
 impl Player {
     pub fn from_file(path: &std::path::Path, mut mpv_ctx: MpvCtx) -> Self {
-       mpv_ctx.observe_property(0, "metadata", MpvFormat::String).expect("Failed to observe metadata property");
+        mpv_ctx
+            .observe_property(0, "metadata", MpvFormat::String)
+            .expect("Failed to observe metadata property");
         match fs::read_to_string(path) {
             Ok(txt) => {
                 let mut player = serde_json::from_str::<Player>(&txt)
@@ -76,6 +78,20 @@ impl Player {
             .streams
             .push(Stream::new(self.cfg.last_id, name, url));
         self.cfg.streams.last().unwrap()
+    }
+
+    pub fn play(&mut self, id: usize) -> Result<&Stream, ()> {
+        if let Some(stream) = self.cfg.streams.iter().find(|x| x.id == id) {
+            let next_url = stream.url.to_string();
+            self.mpv_ctx
+                .as_mut()
+                .unwrap()
+                .command(&["loadfile", &next_url])
+                .expect("Error opening URL");
+            Ok(stream)
+        } else {
+            Err(())
+        }
     }
 
     pub fn next(&mut self) {

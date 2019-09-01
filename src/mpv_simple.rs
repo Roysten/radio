@@ -297,9 +297,13 @@ mod tests {
             let result = ctx.wait_event(-1.0);
             if let Ok(event) = result {
                 match event {
-                    MpvEvent::PropertyChange { name, change, reply_userdata } => {
+                    MpvEvent::PropertyChange {
+                        name,
+                        change,
+                        reply_userdata,
+                    } => {
                         println!("{} {} {}", name, change, reply_userdata);
-                    },
+                    }
                     _ => println!("Received event: {:?}", event),
                 }
             } else {

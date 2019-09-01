@@ -54,10 +54,18 @@ pub fn put_prev(data: web::Data<AppState>) -> impl Responder {
     HttpResponse::Ok().json2(&guard.get_current())
 }
 
-pub fn delete_stream(info: web::Path<usize>, data: web::Data<AppState>) -> Result<HttpResponse> {
+pub fn delete_stream(info: web::Path<usize>, data: web::Data<AppState>) -> impl Responder {
     let mut guard = data.player.lock().unwrap();
     match guard.delete(info.into_inner()) {
-        Some(stream) => Ok(HttpResponse::Ok().json2(&stream)),
-        None => Ok(HttpResponse::NotFound().body("No stream with the provided ID")),
+        Some(stream) => HttpResponse::Ok().json2(&stream),
+        None => HttpResponse::NotFound().body("No stream with the provided ID"),
+    }
+}
+
+pub fn put_play(info: web::Path<usize>, data: web::Data<AppState>) -> impl Responder {
+    let mut guard = data.player.lock().unwrap();
+    match guard.play(info.into_inner()) {
+        Ok(stream) => HttpResponse::Ok().json2(&stream),
+        Err(_) => HttpResponse::NotFound().body("No stream with the provided ID"),
     }
 }

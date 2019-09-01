@@ -44,6 +44,7 @@ fn main() {
             .route("/stream", web::post().to(http::post_stream))
             .route("/stream", web::get().to(http::get_stream))
             .route("/stream/{id}", web::delete().to(http::delete_stream))
+            .route("/stream/{id}", web::put().to(http::put_play))
             .route("/next", web::put().to(http::put_next))
             .route("/prev", web::put().to(http::put_prev))
             .service(actix_files::Files::new("/", "/home/roysten/web").index_file("index.html"))
