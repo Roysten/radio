@@ -2,39 +2,54 @@ mod http;
 mod mpv_simple;
 mod player;
 
+use std::env;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 use actix_web::{web, App, HttpServer};
-use serde::{Deserialize, Serialize};
+use getopts::Options;
 
-#[derive(Serialize, Deserialize, Debug)]
-struct MetadataUpdate<'a> {
-    #[serde(rename = "icy-br")]
-    bitrate: Option<&'a str>,
-    #[serde(rename = "icy-pub")]
-    public: Option<&'a str>,
-    #[serde(rename = "icy-description")]
-    description: Option<&'a str>,
-    #[serde(rename = "icy-audio-info")]
-    audio_info: Option<&'a str>,
-    #[serde(rename = "icy-url")]
-    url: Option<&'a str>,
-    #[serde(rename = "icy-genre")]
-    genre: Option<&'a str>,
-    #[serde(rename = "icy-name")]
-    name: Option<&'a str>,
-    #[serde(rename = "icy-title")]
-    title: Option<&'a str>,
+fn print_usage(program: &str, opts: Options) {
+    let brief = format!("Usage: {} FILE [options]", program);
+    print!("{}", opts.usage(&brief));
 }
 
 fn main() {
-    let cfg_path = Path::new("my_cfg.json");
+    let args: Vec<String> = env::args().collect();
+    let program = args[0].clone();
+    let mut opts = Options::new();
+    opts.reqopt("o", "output", "Directory to store the user data", "DIR");
+    opts.optflag("h", "help", "print this help menu");
+
+    let matches = match opts.parse(&args[1..]) {
+        Ok(m) => m,
+        Err(msg) => {
+            let exit_code =
+                if args.contains(&"-h".to_string()) || args.contains(&"--help".to_string()) {
+                    print_usage(&program, opts);
+                    0
+                } else {
+                    eprintln!("E: {}", msg.to_string());
+                    1
+                };
+            std::process::exit(exit_code);
+        }
+    };
+
+    let cfg_path_txt = matches.opt_str("o").unwrap();
+    let cfg_path = Path::new(&cfg_path_txt);
+    if !cfg_path.exists() {
+        eprintln!("E: The provided path does not exist.");
+        std::process::exit(1);
+    }
 
     let mut mpv_ctx = mpv_simple::MpvCtx::create().expect("Failed to create MPV context");
     mpv_ctx.init().expect("Failed to initialize MPV context");
 
-    let player = Arc::new(Mutex::new(player::Player::from_file(cfg_path, mpv_ctx)));
+    let player = Arc::new(Mutex::new(player::Player::from_file(
+        &cfg_path.join("radio.json"),
+        mpv_ctx,
+    )));
     HttpServer::new(move || {
         App::new()
             .data(http::AppState {

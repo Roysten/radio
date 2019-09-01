@@ -1,9 +1,29 @@
 use std::cmp;
-use std::fs;
+use std::fs::{self, OpenOptions};
 
 use crate::mpv_simple::{MpvCtx, MpvFormat};
 
 use serde::{Deserialize, Serialize};
+
+/*#[derive(Serialize, Deserialize, Debug)]
+struct MetadataUpdate<'a> {
+    #[serde(rename = "icy-br")]
+    bitrate: Option<&'a str>,
+    #[serde(rename = "icy-pub")]
+    public: Option<&'a str>,
+    #[serde(rename = "icy-description")]
+    description: Option<&'a str>,
+    #[serde(rename = "icy-audio-info")]
+    audio_info: Option<&'a str>,
+    #[serde(rename = "icy-url")]
+    url: Option<&'a str>,
+    #[serde(rename = "icy-genre")]
+    genre: Option<&'a str>,
+    #[serde(rename = "icy-name")]
+    name: Option<&'a str>,
+    #[serde(rename = "icy-title")]
+    title: Option<&'a str>,
+}*/
 
 #[derive(Deserialize, Serialize)]
 pub struct Stream {
@@ -17,16 +37,18 @@ pub struct PlayerCfg {
     pub streams: Vec<Stream>,
     pub current: usize,
 
-    #[serde(skip)]
+    #[serde(skip, default)]
     pub last_id: usize,
 }
 
 #[derive(Deserialize, Serialize)]
 pub struct Player {
-    pub cfg_path: String,
     pub cfg: PlayerCfg,
 
-    #[serde(skip)]
+    #[serde(skip, default)]
+    pub cfg_path: String,
+
+    #[serde(skip, default)]
     mpv_ctx: Option<MpvCtx>,
 }
 
@@ -48,6 +70,7 @@ impl Player {
             Ok(txt) => {
                 let mut player = serde_json::from_str::<Player>(&txt)
                     .expect("Failed to parse configuration file");
+                player.cfg_path = path.to_str().unwrap().to_string();
                 player.mpv_ctx = Some(mpv_ctx);
                 player.cfg.last_id = player
                     .cfg
@@ -77,6 +100,7 @@ impl Player {
         self.cfg
             .streams
             .push(Stream::new(self.cfg.last_id, name, url));
+        self.dump_cfg();
         self.cfg.streams.last().unwrap()
     }
 
@@ -88,6 +112,7 @@ impl Player {
                 .unwrap()
                 .command(&["loadfile", &next_url])
                 .expect("Error opening URL");
+            self.dump_cfg();
             Ok(stream)
         } else {
             Err(())
@@ -103,6 +128,7 @@ impl Player {
                 .unwrap()
                 .command(&["loadfile", &next_url])
                 .expect("Error opening URL");
+            self.dump_cfg();
         }
     }
 
@@ -119,6 +145,7 @@ impl Player {
                 .unwrap()
                 .command(&["loadfile", &prev_url])
                 .expect("Error opening URL");
+            self.dump_cfg();
         }
     }
 
@@ -128,8 +155,23 @@ impl Player {
 
     pub fn delete(&mut self, id: usize) -> Option<Stream> {
         match self.cfg.streams.iter().position(|stream| stream.id == id) {
-            Some(pos) => Some(self.cfg.streams.remove(pos)),
+            Some(pos) => {
+                self.dump_cfg();
+                Some(self.cfg.streams.remove(pos))
+            },
             None => None,
+        }
+    }
+
+    fn dump_cfg(&self) {
+        let open_result = OpenOptions::new()
+            .create(true)
+            .write(true)
+            .truncate(true)
+            .open(&self.cfg_path);
+
+        if let Ok(f) = open_result {
+            let _ = serde_json::to_writer_pretty(f, &self);
         }
     }
 }
