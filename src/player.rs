@@ -107,6 +107,7 @@ impl Player {
     pub fn play(&mut self, id: usize) -> Result<&Stream, ()> {
         if let Some(stream) = self.cfg.streams.iter().find(|x| x.id == id) {
             let next_url = stream.url.to_string();
+            self.cfg.current = id - 1;
             self.mpv_ctx
                 .as_mut()
                 .unwrap()

@@ -1,0 +1,23 @@
+.form-style-6 {
+	font-size: 1.5em;
+	margin: 10px auto;
+	padding-bottom: 16px;
+	padding-top: 16px;
+	width: 600px;
+}
+
+input[type="submit"].form-style-6 {
+	background-color: #FBFBFB;
+	border: 1px solid lightgrey;
+}
+
+input[type="submit"].form-style-6:hover {
+	background-color: #FFFFFF;
+}
+
+@media only screen and (max-width: 1000px) {
+	.form-style-6 {
+		width: 100%;
+	}
+}
+

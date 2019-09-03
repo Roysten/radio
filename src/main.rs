@@ -62,7 +62,7 @@ fn main() {
             .route("/stream/{id}", web::put().to(http::put_play))
             .route("/next", web::put().to(http::put_next))
             .route("/prev", web::put().to(http::put_prev))
-            .service(actix_files::Files::new("/", "/home/roysten/web").index_file("index.html"))
+            .service(actix_files::Files::new("/", "web").index_file("index.html"))
     })
     .workers(1)
     .bind("0.0.0.0:8080")
