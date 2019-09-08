@@ -35,7 +35,7 @@ h2 {
 }
 
 .highlight {
-	background-color: #FFD45E;
+	background-color: #428bca;
 	height: 24px;
 	position: relative;
 	top: -24px;
@@ -58,13 +58,20 @@ ul.stream_list {
 }
 
 ul.stream_list li {
+	height: 80px;
+	line-height: 80px;
     margin-bottom: 5px;
-	background-color: #FFD45E;
+	background-color: #428bca;
+	font-weight: 600;
 	text-overflow: ellipsis;
+	color: white;
 	overflow: hidden;
 	white-space: nowrap;
 	border-radius: 5px;
-	border: 1px solid black;
+    text-align: center;
+	vertical-align: middle;
+    font-size: 3rem;
+	border: 1px solid #428bca;
 }
 
 ul.stream_list li a {
@@ -78,28 +85,16 @@ ul.stream_list li img {
 }
 
 ul.stream_list li:hover {
-    background-color: lightgrey;
+	border: 1px solid black;
 }
 
 ul.stream_list li.active {
     background-color: #FFD45E;
 }
 
-ul.stream_list li.new a {
-    text-align: center;
-    font-size: 3rem;
-    padding: 15px;
-}
-
 ul.stream_list span.title {
 	font-size: 2rem;
 	padding: 20px;
-}
-
-ul.stream_list span.number {
-	font-size: 2rem;
-	padding: 20px;
-	display: inline-block;
 }
 
 @media only screen and (max-width: 1000px) {
@@ -112,7 +107,6 @@ ul.stream_list span.number {
     }
 
     .highlight {
-        background-color: #FFD45E;
         height: 12px;
         position: relative;
         top: -12px;
@@ -126,17 +120,8 @@ ul.stream_list span.number {
 		width: 100%;
 	}
 
-	ul.stream_list li {
-		padding: 20px;
-	}
-
-	ul.stream_list li.new {
-		padding: 5px;
-	}
-
-	ul.stream_list span.title, ul.stream_list span.number {
+	ul.stream_list span.title {
 		font-size: 1.5rem;
-		padding: 10px;
 	}
 }
 

@@ -39,16 +39,11 @@
 	function createPlaylistItem(n, stream) {
 		const li = document.createElement("li");
 		const a = document.createElement("a");
-		const number = document.createElement("span");
 		const span = document.createElement("span");
 
 		span.innerText = stream.name;
 		span.className = "title";
 
-		number.innerText = n;
-		number.className = "number";
-
-		a.appendChild(number);
 		a.appendChild(span);
 		li.appendChild(a);
 

@@ -42,18 +42,6 @@ pub fn get_stream(data: web::Data<AppState>) -> impl Responder {
     HttpResponse::Ok().json2(&guard.get_current())
 }
 
-pub fn put_next(data: web::Data<AppState>) -> impl Responder {
-    let mut guard = data.player.lock().unwrap();
-    guard.next();
-    HttpResponse::Ok().json2(&guard.get_current())
-}
-
-pub fn put_prev(data: web::Data<AppState>) -> impl Responder {
-    let mut guard = data.player.lock().unwrap();
-    guard.prev();
-    HttpResponse::Ok().json2(&guard.get_current())
-}
-
 pub fn delete_stream(info: web::Path<usize>, data: web::Data<AppState>) -> impl Responder {
     let mut guard = data.player.lock().unwrap();
     match guard.delete(info.into_inner()) {

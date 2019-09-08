@@ -1,10 +1,6 @@
-use std::ffi::c_void;
-use std::ffi::CStr;
-use std::ffi::CString;
+use std::ffi::{c_void, CStr, CString};
 
-use libc::c_char;
-use libc::c_double;
-use libc::c_int;
+use libc::{c_char, c_double, c_int};
 
 #[derive(Debug, PartialEq, Eq)]
 #[repr(C)]
@@ -37,7 +33,7 @@ pub enum MpvError {
     Fatal = -1337,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
 #[allow(dead_code)]
 pub enum MpvFormat {
@@ -163,11 +159,15 @@ impl From<CMpvEvent> for MpvEvent {
             CMpvEventId::PlaybackRestart => MpvEvent::PlaybackRestart,
             CMpvEventId::PropertyChange => unsafe {
                 let property = &*(event.data as *const CMpvEventProperty);
-                let txt = *(property.data as *const *const c_char);
-                MpvEvent::PropertyChange {
-                    name: CStr::from_ptr(property.name).to_str().unwrap().to_string(),
-                    change: CStr::from_ptr(txt).to_str().unwrap().to_string(),
-                    reply_userdata: event.reply_userdata,
+                if property.format == MpvFormat::None {
+                    MpvEvent::Idle
+                } else {
+                    let txt = *(property.data as *const *const c_char);
+                    MpvEvent::PropertyChange {
+                        name: CStr::from_ptr(property.name).to_str().unwrap().to_string(),
+                        change: CStr::from_ptr(txt).to_str().unwrap().to_string(),
+                        reply_userdata: event.reply_userdata,
+                    }
                 }
             },
             CMpvEventId::ChapterChange => MpvEvent::ChapterChange,
@@ -176,6 +176,8 @@ impl From<CMpvEvent> for MpvEvent {
         }
     }
 }
+
+type WakeUpCallback = extern "C" fn(d: *mut c_void);
 
 extern "C" {
 
@@ -196,10 +198,21 @@ extern "C" {
         format: MpvFormat,
     ) -> MpvError;
 
+    fn mpv_set_wakeup_callback(ctx: *mut c_void, cb: WakeUpCallback, d: *mut c_void);
+
 }
 
 pub struct MpvCtx {
     ctx: *mut c_void,
+    wakeup_callback: Option<Box<dyn FnMut()>>,
+}
+
+extern "C" fn wakeup_callback(d: *mut c_void) {
+    unsafe {
+        let ctx = (d as *mut MpvCtx).as_mut().unwrap();
+        let fun = ctx.wakeup_callback.as_mut().unwrap();
+        fun();
+    }
 }
 
 impl<'a> MpvCtx {
@@ -208,7 +221,10 @@ impl<'a> MpvCtx {
         if ctx.is_null() {
             Err("Intialization of context failed")
         } else {
-            Ok(MpvCtx { ctx })
+            Ok(MpvCtx {
+                ctx,
+                wakeup_callback: None,
+            })
         }
     }
 
@@ -237,7 +253,7 @@ impl<'a> MpvCtx {
         if result == MpvError::Success {
             Ok(())
         } else {
-            Err(MpvError::from(result))
+            Err(result)
         }
     }
 
@@ -270,6 +286,12 @@ impl<'a> MpvCtx {
             Err(result)
         }
     }
+
+    pub fn set_wakeup_callback<Callback: 'static + FnMut()>(&mut self, fun: Callback) {
+        self.wakeup_callback = Some(Box::new(fun));
+        let x = &mut *self as *mut _;
+        unsafe { mpv_set_wakeup_callback(self.ctx, wakeup_callback, x as *mut c_void) };
+    }
 }
 
 impl Drop for MpvCtx {
@@ -287,7 +309,7 @@ mod tests {
     fn test_wait_event() {
         let mut ctx = MpvCtx::create().expect("Creating context failed");
         ctx.init().expect("Failed to initialize context");
-        ctx.observe_property(0, "metadata", MpvFormat::MpvFormatString)
+        ctx.observe_property(0, "metadata", MpvFormat::String)
             .expect("Cannot observe metadata property");
         ctx.command(&["loadfile", "http://stream.gal.io/arrow"])
             .expect("Error opening URL");
