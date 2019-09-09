@@ -57,3 +57,9 @@ pub fn put_play(info: web::Path<usize>, data: web::Data<AppState>) -> impl Respo
         Err(_) => HttpResponse::NotFound().body("No stream with the provided ID"),
     }
 }
+
+pub fn get_now_playing(data: web::Data<AppState>) -> impl Responder {
+    let guard = data.player.lock().unwrap();
+    HttpResponse::Ok().json2(&guard.get_now_playing())
+}
+

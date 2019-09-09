@@ -139,6 +139,7 @@ impl Player {
             guard.set_wakeup_callback(closure);
         }
 
+        let _ = player.play(player.cfg.current + 1);
         player
     }
 
@@ -164,7 +165,13 @@ impl Player {
 
     pub fn play(&mut self, id: usize) -> Result<&Stream, ()> {
         let found = self.cfg.streams.iter().position(|x| x.id == id);
+
         if let Some(pos) = found {
+            {
+                let mut guard = self.now_playing.lock().unwrap();
+                *guard = String::new();
+            }
+
             self.cfg.current = self.cfg.streams[pos].id - 1;
             let url = self.cfg.streams[pos].url.to_string();
             self.play_stream(&url);
@@ -199,5 +206,9 @@ impl Player {
         if let Ok(f) = open_result {
             let _ = serde_json::to_writer_pretty(f, &self);
         }
+    }
+
+    pub fn get_now_playing(&self) -> String {
+        self.now_playing.lock().unwrap().to_string()
     }
 }

@@ -61,6 +61,7 @@ fn main() {
             .route("/stream", web::get().to(http::get_stream))
             .route("/stream/{id}", web::delete().to(http::delete_stream))
             .route("/stream/{id}", web::put().to(http::put_play))
+            .route("/now_playing", web::get().to(http::get_now_playing))
             .service(actix_files::Files::new("/", "web").index_file("index.html"))
     })
     .workers(1)
@@ -68,32 +69,4 @@ fn main() {
     .unwrap()
     .run()
     .unwrap();
-
-    /*mpv.command(&["loadfile", "http://stream.gal.io/arrow"]).expect("Error opening URL");
-    //mpv.command(&["loadfile", "https://20043.live.streamtheworld.com/RADIO538.mp3?dist=radio-538_web"]);
-    //mpv.command(&["loadfile", "https://icecast.omroep.nl/radio2-bb-mp3"]).expect("Error opening URL");
-
-    'main: loop {
-        while let Some(event) = mpv.wait_event(-1.0) {
-            //println!("{:?}", event);
-            match event {
-                mpv::Event::Shutdown | mpv::Event::Idle => {
-                    break 'main;
-                },
-                mpv::Event::PropertyChange{name, change: mpv::Format::Str(x), reply_userdata} => {
-                    //println!("{}", x);
-                    if let Ok(metadata) = serde_json::from_str::<MetadataUpdate>(x) {
-                        if let Some(title) = metadata.title {
-                            println!("Now playing: {}", title);
-                        } else {
-                            println!("Metadata update but no title was provided");
-                        }
-                    } else {
-                        println!("Deserializing metadata failed");
-                    }
-                },
-                _ => ()
-            }
-        }
-    }*/
 }
