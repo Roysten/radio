@@ -74,6 +74,14 @@ ul.stream_list li {
 	border: 1px solid #428bca;
 }
 
+#now_playing_title {
+	display: block;
+	text-overflow: ellipsis;
+	overflow: hidden;
+	white-space: nowrap;
+	width: 95vw;
+}
+
 ul.stream_list li a {
 	display: block;
 }
@@ -95,6 +103,10 @@ ul.stream_list li.active {
 ul.stream_list span.title {
 	font-size: 2rem;
 	padding: 20px;
+}
+
+.uppercase {
+	text-transform: uppercase;
 }
 
 @media only screen and (max-width: 1000px) {

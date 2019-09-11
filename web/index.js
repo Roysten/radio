@@ -4,6 +4,7 @@
 	const streamList = document.getElementById("stream_list");
 	const newStream = document.getElementById("new_stream");
 	const nowPlaying = document.getElementById("now_playing");
+	const nowPlayingTitle = document.getElementById("now_playing_title");
 
 	function nowPlayingLoaded(xhr, statusCode, payload) {
 		if (statusCode === 200) {
@@ -13,6 +14,7 @@
 			} else {
 				nowPlaying.innerText = json.name;
 			}
+			nowPlayingTitle.innerText = "";
 		}
 	}
 
@@ -56,11 +58,25 @@
 		streamList.insertBefore(li, newStream);
 	}
 
+	function nowPlayingTitleLoaded(xhr, statusCode, payload) {
+		if (statusCode === 200) {
+			nowPlayingTitle.innerText = JSON.parse(payload);
+		}
+
+		window.setTimeout(
+			function() {
+				api.request("GET", "/now_playing", nowPlayingTitleLoaded);
+			},
+			5000
+		);
+	}
+
 	document.addEventListener(
 		"DOMContentLoaded",
 		function() {
 			api.request("GET", "/playlist",	playlistLoaded);
 			api.request("GET", "/stream", nowPlayingLoaded);
+			api.request("GET", "/now_playing", nowPlayingTitleLoaded);
 		}
 	);
 
