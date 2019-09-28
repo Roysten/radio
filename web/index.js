@@ -21,6 +21,11 @@
 	function playlistLoaded(xhr, statusCode, payload) {
 		if (statusCode === 200) {
 			const json = JSON.parse(payload);
+			json.sort(
+				function(a, b) {
+					return a.name > b.name;
+				}
+			);
 			for (let i = 0; i < json.length; ++i) {
 				createPlaylistItem(i + 1, json[i]);
 			}

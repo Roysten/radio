@@ -139,7 +139,7 @@ impl Player {
             guard.set_wakeup_callback(closure);
         }
 
-        let _ = player.play(player.cfg.current + 1);
+        let _ = player.play(player.cfg.current);
         player
     }
 
@@ -172,7 +172,7 @@ impl Player {
                 *guard = String::new();
             }
 
-            self.cfg.current = self.cfg.streams[pos].id - 1;
+            self.cfg.current = self.cfg.streams[pos].id;
             let url = self.cfg.streams[pos].url.to_string();
             self.play_stream(&url);
             self.dump_cfg();
@@ -183,14 +183,15 @@ impl Player {
     }
 
     pub fn get_current(&self) -> Option<&Stream> {
-        self.cfg.streams.get(self.cfg.current)
+        self.cfg.streams.iter().find(|x| x.id == self.cfg.current)
     }
 
     pub fn delete(&mut self, id: usize) -> Option<Stream> {
         match self.cfg.streams.iter().position(|stream| stream.id == id) {
             Some(pos) => {
+                let deleted = self.cfg.streams.remove(pos);
                 self.dump_cfg();
-                Some(self.cfg.streams.remove(pos))
+                Some(deleted)
             }
             None => None,
         }
