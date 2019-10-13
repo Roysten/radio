@@ -163,9 +163,11 @@ impl From<CMpvEvent> for MpvEvent {
                     MpvEvent::Idle
                 } else {
                     let txt = *(property.data as *const *const c_char);
+                    let name = CStr::from_ptr(property.name).to_string_lossy().to_string();
+                    let change = CStr::from_ptr(txt).to_string_lossy().to_string();
                     MpvEvent::PropertyChange {
-                        name: CStr::from_ptr(property.name).to_str().unwrap().to_string(),
-                        change: CStr::from_ptr(txt).to_str().unwrap().to_string(),
+                        name: name,
+                        change: change,
                         reply_userdata: event.reply_userdata,
                     }
                 }
